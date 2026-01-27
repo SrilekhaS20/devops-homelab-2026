@@ -20,7 +20,7 @@ Personal homelab simulating enterprise-grade DevOps environment on limited hardw
 - AWS simulation: LocalStack + optional free tier
 
 **Progress Log**
-- 2026-01-27: VMs created, Ubuntu 24.04 installed, SSH configured
+- 2026-01-27: VMs created, Ubuntu 24.04 installed, SSH configured - created SSH keys in PC then copied those keys to all 3 VMs
 - ...
 
 **Architecture Diagram**
