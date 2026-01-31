@@ -7,7 +7,7 @@ Personal homelab simulating enterprise-grade DevOps environment on limited hardw
 **Hardware**
 - Host: 16 GB RAM laptop
 - VM1: Jenkins + Ansible (4 GB)
-- VM2: K3s Kubernetes + MySQL (6 GB)
+- VM2: K3s Kubernetes + MySQL (4 GB)
 - VM3: Prometheus + Grafana (4 GB)
 
 **Tools**
