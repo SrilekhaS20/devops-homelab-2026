@@ -28,5 +28,25 @@ pipeline {
                 }
             }
         }
+
+        stage('Post-Deploy Health Check') {
+            steps {
+                script {
+                    sleep 10
+                    sh '''
+                        for i in {1..5}; do
+                            if curl -f http://localhost:3000; then
+                                echo "Health check passed"
+                                exit 0
+                            fi
+                            echo "Attempt $i failed, retrying..."
+                            sleep 5
+                        done
+                        echo "Health check failed after 5 attempts"
+                        exit 1
+                    '''
+                }
+            }
+        }
     }
 }
