@@ -1,0 +1,17 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Build Docker Image') {
+            sh 'docker build -t first-app:${BUILD_NUMBER} . '
+        }
+
+        stage('Deploy') {
+            sh '''
+                docker stop first-app || true
+                docker rm first-app || true
+                docker run -d --name first-app -p 3000:3000 first-app:${BUILD_NUMBER}
+            '''
+        }
+    }
+}
