@@ -73,7 +73,7 @@ pipeline {
                     echo "Response: $RESPONSE"
 
                     echo "Test 2: Container health"
-                    docker exec ${APP_NAME} curl -s localhost:3000
+                    docker exec first-app curl -s localhost:3000
 
                     echo "All smoke tests passed!"
                 '''
@@ -88,7 +88,7 @@ pipeline {
             echo '============================================'
             echo "Application URL: http://192.168.1.9:3000"
             echo "Build Number: ${BUILD_NUMBER}"
-            echo "Docker Image: ${APP_NAME}:${BUILD_NUMBER}"
+            echo "Docker Image: first-app:${BUILD_NUMBER}"
             sh 'curl -s http://localhost:3000'
             echo '============================================'
         }
@@ -98,10 +98,10 @@ pipeline {
             echo '============================================'
             sh '''
                 echo "Container status:"
-                docker ps | grep ${APP_NAME} || echo "Container not running"
+                docker ps | grep first-app || echo "Container not running"
 
                 echo "Container logs:"
-                docker logs ${APP_NAME} || echo "No logs available"
+                docker logs first-app || echo "No logs available"
             '''
             echo '============================================'
         }
