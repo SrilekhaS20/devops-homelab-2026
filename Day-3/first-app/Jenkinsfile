@@ -32,11 +32,28 @@ pipeline {
         stage('Post-Deploy Health Check') {
             steps {
                 echo 'Performing health check...'
-                retry(5) {
-                    sleep(time: 10, unit: 'SECONDS')
-                    sh 'curl -f http://localhost:3000'
+                script {
+                    sleep(time: 15, unit: 'SECONDS')
+
+                    def healthCheckPassed = false
+                    for (int i = 1; i <= 5; i++) {
+                        try {
+                            sh 'curl -f http://localhost:3000'
+                            echo "Health check passed on attempt ${i}!"
+                            healthCheckPassed = true
+                            break
+                        } catch (Exception e) {
+                            echo "Attempt ${i} failed, retrying..."
+                            if (i < 5) {
+                                sleep(time: 5, unit: 'SECONDS')
+                            }
+                        }
+                    }
+
+                    if (!healthCheckPassed) {
+                        error("Health check failed after 5 attempts")
+                    }
                 }
-                echo 'Health check passed!'
             }
         }
     }
