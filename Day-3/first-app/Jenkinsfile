@@ -4,7 +4,9 @@ pipeline {
     stages {
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t first-app:${BUILD_NUMBER} . '
+                dir('Day-3/first-app') {
+                    sh 'docker build -t first-app:${BUILD_NUMBER} . '
+                }
             }
         }
 
