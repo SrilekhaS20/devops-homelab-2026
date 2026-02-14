@@ -19,5 +19,14 @@ pipeline {
                 '''
             }
         }
+
+        stage('Metrics') {
+            steps {
+                script {
+                    def buildTime = currentBuild.duration / 1000
+                    echo "Build took ${buildTime} seconds"
+                }
+            }
+        }
     }
 }
