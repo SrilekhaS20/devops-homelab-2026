@@ -63,5 +63,51 @@ pipeline {
                 }
             }
         }
+
+        stage('Smoke Tests') {
+            steps {
+                echo 'Running smoke tests...'
+                sh '''
+                    echo "Test 1: Main endpoint"
+                    RESPONSE=$(curl -s http://localhost:3000)
+                    echo "Response: $RESPONSE"
+
+                    echo "Test 2: Container health"
+                    docker exec ${APP_NAME} curl -s localhost:3000
+
+                    echo "All smoke tests passed!"
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '============================================'
+            echo 'PIPELINE COMPLETED SUCCESSFULLY!'
+            echo '============================================'
+            echo "Application URL: http://192.168.1.9:3000"
+            echo "Build Number: ${BUILD_NUMBER}"
+            echo "Docker Image: ${APP_NAME}:${BUILD_NUMBER}"
+            sh 'curl -s http://localhost:3000'
+            echo '============================================'
+        }
+        failure {
+            echo '============================================'
+            echo 'PIPELINE FAILED!'
+            echo '============================================'
+            sh '''
+                echo "Container status:"
+                docker ps | grep ${APP_NAME} || echo "Container not running"
+
+                echo "Container logs:"
+                docker logs ${APP_NAME} || echo "No logs available"
+            '''
+            echo '============================================'
+        }
+        always {
+            echo 'Cleaning up old Docker images...'
+            sh 'docker image prune -f || true'
+        }
     }
 }
