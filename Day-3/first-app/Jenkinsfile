@@ -29,6 +29,13 @@ pipeline {
             }
         }
 
+        stage('Wait for Startup') {
+            steps {
+                echo 'Waiting for application to fully start...'
+                sleep(time: 25, unit: 'SECONDS')
+            }
+        }
+
         stage('Post-Deploy Health Check') {
             steps {
                 echo 'Performing health check...'
