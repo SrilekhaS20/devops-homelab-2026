@@ -4,7 +4,7 @@
 
 ## 🏗️ PROJECT: Production-Ready Jenkins on Docker
 
-**Author:** DevOps Engineer
+**Author:** Srilekha S
 **Date:** 8 February 2026
 **Environment:** Home Lab / Production
 **Status:** ✅ Active & Maintained
