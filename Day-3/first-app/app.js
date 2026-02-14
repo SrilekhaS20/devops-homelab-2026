@@ -5,6 +5,6 @@ const server = http.createServer((req, res) => {
   res.end('Auto-deployed from GitHub! v2.0\n');
 });
 
-server.listen(3000, () => {
-  console.log('Server running on port 3000');
+server.listen(3000, '0.0.0.0', () => {
+  console.log('Server running on http://0.0.0.0:3000');
 });
