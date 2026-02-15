@@ -70,6 +70,7 @@ Developer Push → GitHub → Jenkins (SCM Polling) → Build → Deploy → Ver
 
 ### 1. Created GitHub Webhook
 
+![GitHub Webhook](screenshots/jenkins-webhook.png)
 
 ### 2. Jenkins pipeline success
 
