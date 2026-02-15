@@ -74,18 +74,29 @@ Developer Push → GitHub → Jenkins (SCM Polling) → Build → Deploy → Ver
 
 ### 2. Jenkins pipeline success
 
+![Jenkins pipeline success](screenshots/jenkins-pipeline-stage-success.PNG)
 
 ### 3. Jenkins console output
 
+![Jenkins Console Output1](screenshots/jenkins-console-output-1.PNG)
+
+![Jenkins Console Output2](screenshots/jenkins-console-output-2.PNG)
+
+![Jenkins Console Output3](screenshots/jenkins-console-output-3.PNG)
+
+![Jenkins Console Output4](screenshots/jenkins-console-output-4.PNG)
 
 ### 4. Jenkins Build history
 
+![Jenkins Build History](screenshots/jenkins-first-app-build-history.PNG)
 
 ### 5. List Running Docker Container
 
+![List Running Docker Container](screenshots/docker-ps-first-app.PNG)
 
 ### 6. Node.js app working in Browser
 
+![Node.js app working in Browser](screenshots/node.js-app-output.PNG)
 
 ### 7. Final working Jenkinsfile content
 
