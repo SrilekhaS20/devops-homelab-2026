@@ -69,7 +69,7 @@ pipeline {
                 echo 'Running smoke tests...'
                 sh '''
                     echo "Test 1: Main endpoint"
-                    RESPONSE=$(curl -s http://localhost:3000)
+                    RESPONSE=$(docker exec first-app curl -s http://localhost:3000)
                     echo "Response: $RESPONSE"
 
                     echo "Test 2: Container health"
