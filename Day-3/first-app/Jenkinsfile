@@ -45,7 +45,7 @@ pipeline {
                     def healthCheckPassed = false
                     for (int i = 1; i <= 5; i++) {
                         try {
-                            sh 'curl -f http://localhost:3000'
+                            sh 'docker exec first-app curl -f http://localhost:3000'
                             echo "Health check passed on attempt ${i}!"
                             healthCheckPassed = true
                             break
