@@ -4,9 +4,9 @@ metadata:
   name: developer-role
   namespace: team-alpha
 rules:
-- apiGroups: {"", "apps"}
-  resources: {"pods", "deployments", "services", "configmaps"}
-  verbs: {"get", "list", "watch", "create", "update", "patch"}
-- apiGroups: {""}
-  resources: {"pods/log"}
-  verbs: {"get", "list"}
+- apiGroups: ["", "apps"]
+  resources: ["pods", "deployments", "services", "configmaps"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get", "list"]
