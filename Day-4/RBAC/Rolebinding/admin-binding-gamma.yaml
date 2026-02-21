@@ -10,4 +10,4 @@ subjects:
 roleRef:
   - kind: Role
     name: admin-role
-    apiVersion: rbac.authorization.k8s.io
+    apiGroup: rbac.authorization.k8s.io
