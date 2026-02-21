@@ -8,6 +8,6 @@ subjects:
   name: dev-user
   namespace: team-alpha
 roleRef:
-- kind: Role
+  kind: Role
   name: developer-role
   apiGroup: rbac.authorization.k8s.io
