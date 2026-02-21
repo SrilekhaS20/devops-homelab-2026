@@ -3,10 +3,10 @@ kind: Role
 metadata:
   name: developer-role
   namespace: team-alpha
-spec:
-  - apiGroups: {"", "apps"}
-    resources: {"pods", "deployments", "services", "configmaps"}
-    verbs: {"get", "list", "watch", "create", "update", "patch"}
-  - apiGroups: {""}
-    resources: {"pods/log"}
-    verbs: {"get", "list"}
+rules:
+- apiGroups: {"", "apps"}
+  resources: {"pods", "deployments", "services", "configmaps"}
+  verbs: {"get", "list", "watch", "create", "update", "patch"}
+- apiGroups: {""}
+  resources: {"pods/log"}
+  verbs: {"get", "list"}
