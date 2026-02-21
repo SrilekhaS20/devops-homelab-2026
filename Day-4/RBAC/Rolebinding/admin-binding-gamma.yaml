@@ -4,10 +4,10 @@ metadata:
   name: developer-binding
   namespace: team-gamma
 subjects:
-  - kind: ServiceAccount
-    name: admin-user
-    namespace: team-gamma
+- kind: ServiceAccount
+  name: admin-user
+  namespace: team-gamma
 roleRef:
-  - kind: Role
-    name: admin-role
-    apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: admin-role
+  apiGroup: rbac.authorization.k8s.io
