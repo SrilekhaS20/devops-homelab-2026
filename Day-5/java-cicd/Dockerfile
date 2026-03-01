@@ -1,7 +1,3 @@
-FROM ubuntu:20.04
-RUN apt-get update && apt-get install -y openjdk-17-jdk
-RUN apt-get install -y maven
-COPY . /app
-WORKDIR /app
-RUN mvn clean package
-CMD java -jar target/demo-1.0.0.jar
+FROM eclipse-temurin:17-jdk
+COPY target/demo-1.0.0.jar app.jar
+CMD java -jar app.jar
