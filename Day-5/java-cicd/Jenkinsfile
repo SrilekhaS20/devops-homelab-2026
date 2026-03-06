@@ -49,6 +49,9 @@ pipeline {
                     docker rm ${APP_NAME} 2>/dev/null || true
 
                     docker run -d -p 8081:8080 --name ${APP_NAME} ${APP_NAME}:${BUILD_NUMBER}
+
+                    # Wait for Spring Boot to start
+                    sleep 30
                     
                     docker ps | grep ${APP_NAME}
                     echo "Container is running!"
