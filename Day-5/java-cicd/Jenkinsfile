@@ -55,5 +55,15 @@ pipeline {
                 '''
             }
         }
+
+        stage('Test Application') {
+            steps {
+                echo "Testing Application"
+                sh '''
+                    echo "Test1: Home page"
+                    docker exec ${APP_NAME} curl -f http://localhost:8081
+                '''
+            }
+        }
     }
 }
