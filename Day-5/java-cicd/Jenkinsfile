@@ -26,7 +26,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "Using Eclipse Temurin (OpenJDK replacement)"
-                docker build -t ${APP_NAME}:${BUILD_NUMBER}
+                docker build -t ${APP_NAME}:${BUILD_NUMBER} .
                 docker images | grep ${APP_NAME}
 
                 echo "Image size:"
