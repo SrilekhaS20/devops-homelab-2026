@@ -77,4 +77,24 @@ pipeline {
             }
         }
     }
+
+    post {
+        success {
+            echo '========================================'
+            echo 'STAGE1 PIPELINE SUCCESS'
+            echo '========================================'
+            echo "Application url: http://192.168.1.9:8081"
+            echo "Build: ${BUILD_NUMBER}"
+            echo "Image: eclipse-temurin:17-jdk"
+            echo "========================================"
+        }
+
+        failure {
+            sh 'docker logs ${APP_NAME} || true'
+        }
+
+        always {
+            sh 'docker image prune -f || true'
+        }
+    }
 }
