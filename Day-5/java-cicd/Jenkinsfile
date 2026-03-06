@@ -15,12 +15,9 @@ pipeline {
                 echo "Building JAR file with Maven"
                 dir('Day-5/java-cicd') {
                     sh '''
-                      pwd
-                      ls -la
-                      find . -name "pom.xml" -type f
                       mvn --version
-                    //mvn clean package
-                    //ls -lh target/
+                      mvn clean package
+                      ls -lh target/
                     '''
                 }
             }
