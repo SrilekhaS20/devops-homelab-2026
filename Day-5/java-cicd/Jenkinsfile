@@ -65,6 +65,14 @@ pipeline {
                 sh '''
                     echo "Test1: Home page"
                     docker exec ${APP_NAME} curl -f http://localhost:8080
+
+                    echo "Test2: Hello endpoint"
+                    docker exec ${APP_NAME} curl -f http://localhost:8080/api/hello
+
+                    echo "Test3: Health endpoint"
+                    docker exec ${APP_NAME} curl -f http://localhost:8080/api/health
+
+                    echo "All Tests passed!"
                 '''
             }
         }
