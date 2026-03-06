@@ -48,7 +48,7 @@ pipeline {
                     docker stop ${APP_NAME} 2>/dev/null || true
                     docker rm ${APP_NAME} 2>/dev/null || true
 
-                    docker run -d -p 8081:8081 --name ${APP_NAME}:${BUILD_NUMBER}
+                    docker run -d -p 8080:8081 --name ${APP_NAME} ${APP_NAME}:${BUILD_NUMBER}
                     
                     docker ps | grep ${APP_NAME}
                     echo "Container is running!"
