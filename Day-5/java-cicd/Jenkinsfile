@@ -37,5 +37,23 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy container') {
+            steps {
+                echo "Deploying container"
+                sh '''
+                    # Stop old container (if exists)
+                    # 2>/dev/null: Suppress error messages
+                    # || true: Don't fail if container doesn't exist
+                    docker stop ${APP_NAME} 2>/dev/null || true
+                    docker rm ${APP_NAME} 2 >/dev/null || true
+
+                    docker run -d -p 8081:8081 --name ${APP_NAME}:${BUILD_NUMBER}
+                    
+                    docker ps | grep ${APP_NAME}
+                    echo "Container is running!"
+                '''
+            }
+        }
     }
 }
