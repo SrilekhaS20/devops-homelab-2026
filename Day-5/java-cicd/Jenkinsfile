@@ -26,13 +26,15 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "Using Eclipse Temurin (OpenJDK replacement)"
-                sh '''
-                    docker build -t ${APP_NAME}:${BUILD_NUMBER} .
-                    docker images | grep ${APP_NAME}
+                dir('Day-5/java-cicd') {
+                    sh '''
+                        docker build -t ${APP_NAME}:${BUILD_NUMBER} .
+                        docker images | grep ${APP_NAME}
 
-                    echo "Image size:"
-                    docker images ${APP_NAME}:${BUILD_NUMBER} --format "{{.Size}}"
-                '''
+                        echo "Image size:"
+                        docker images ${APP_NAME}:${BUILD_NUMBER} --format "{{.Size}}"
+                    '''
+                }
             }
         }
     }
