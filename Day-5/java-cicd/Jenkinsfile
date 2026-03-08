@@ -117,16 +117,38 @@ pipeline {
     post {
         success {
             echo '========================================'
-            echo 'STAGE1 PIPELINE SUCCESS'
+            echo 'PIPELINE SUCCESS WITH DOCKER HUB!'
             echo '========================================'
+            echo "Docker Hub: https://hub.docker.com/r/${DOCKERHUB_REPO}"
+            echo "Pull Command: docker pull ${DOCKERHUB_REPO}:${BUILD_NUMBER}"
             echo "Application url: http://192.168.1.9:8081"
-            echo "Build: ${BUILD_NUMBER}"
+            echo "Tags: ${BUILD_NUMBER}, latest"
             echo "Image: eclipse-temurin:17-jdk"
+            echo "docker pull ${DOCKERHUB_REPO}:latest"
+            echo "docker run -p 8080:8080 ${DOCKERHUB_REPO}:latest"
             echo "========================================"
         }
 
         failure {
-            sh 'docker logs ${APP_NAME} || true'
+            echo '========================================='
+            echo 'PIPELINE FAILED'
+            echo '========================================='
+            sh '''
+                echo "Gathering failure information..."
+                
+                echo ""
+                echo "=== Container Status ==="
+                docker ps -a | grep ${APP_NAME} || echo "No container found"
+                
+                echo ""
+                echo "=== Container Logs ==="
+                docker logs ${APP_NAME} 2>&1 || echo "No logs available"
+                
+                echo ""
+                echo "=== Docker Images ==="
+                docker images | grep ${APP_NAME} || echo "No images"
+            '''
+            echo '=========================================='
         }
 
         always {
