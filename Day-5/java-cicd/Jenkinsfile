@@ -64,7 +64,11 @@ pipeline {
                             docker logout
                             echo "Image pushed to DockerHub successfully"
                             
-                        ''' 
+                        '''
+                    }
+                }
+            }
+        }
 
         stage('Deploy container') {
             steps {
