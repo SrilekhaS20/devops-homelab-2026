@@ -135,15 +135,12 @@ pipeline {
             echo '========================================='
             sh '''
                 echo "Gathering failure information..."
-                
                 echo ""
                 echo "=== Container Status ==="
                 docker ps -a | grep ${APP_NAME} || echo "No container found"
-                
                 echo ""
                 echo "=== Container Logs ==="
                 docker logs ${APP_NAME} 2>&1 || echo "No logs available"
-                
                 echo ""
                 echo "=== Docker Images ==="
                 docker images | grep ${APP_NAME} || echo "No images"
