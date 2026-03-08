@@ -671,7 +671,7 @@ Issues Resolved:      10+
 DevOps Engineer | Chennai, India
 
 - **GitHub:** [@SrilekhaS20](https://github.com/SrilekhaS20)
-- **Docker Hub:** [srilekhas20](https://hub.docker.com/r/srilekhas20)
+- **Docker Hub:** [sri24devops](https://hub.docker.com/r/sri24devops)
 - **LinkedIn:** [SrilekhaSenthilkumar](https://www.linkedin.com/in/srilekha-senthilkumar/)
 
 ---
