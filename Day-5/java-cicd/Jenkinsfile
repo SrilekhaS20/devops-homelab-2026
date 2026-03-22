@@ -88,41 +88,42 @@ pipeline {
 
         stage('Deploy container') {
             steps {
-                echo "Deploying from DockerHub"
+                echo "Deploying to ${params.ENVIRONMENT} from DockerHub"
                 sh '''
                     # Stop old container (if exists)
                     # 2>/dev/null: Suppress error messages
                     # || true: Don't fail if container doesn't exist
-                    docker stop ${APP_NAME} 2>/dev/null || true
-                    docker rm ${APP_NAME} 2>/dev/null || true
+                    docker stop ${APP_NAME}-${params.ENVIRONMENT} 2>/dev/null || true
+                    docker rm ${APP_NAME}-${params.ENVIRONMENT} 2>/dev/null || true
 
                     echo "Pulling from DockerHub"
                     docker pull ${DOCKERHUB_REPO}:${BUILD_NUMBER}
 
                     echo "Starting new container"
-                    docker run -d -p 8081:8080 --name ${APP_NAME} --restart unless-stopped ${DOCKERHUB_REPO}:${BUILD_NUMBER}
+                    docker run -d -p 8081:8080 --name ${APP_NAME}-${params.ENVIRONMENT} --restart unless-stopped ${DOCKERHUB_REPO}:${BUILD_NUMBER}
 
                     # Wait for Spring Boot to start
                     sleep 30
                     
-                    docker ps | grep ${APP_NAME}
+                    docker ps | grep ${APP_NAME}-${params.ENVIRONMENT}
                     echo "Container is running!"
+                    echo "${params.ENVIRONMENT} deployment is successful!"
                 '''
             }
         }
 
         stage('Test Application') {
             steps {
-                echo "Testing Application"
+                echo "Testing Application in ${params.ENVIRONMENT}"
                 sh '''
                     echo "Test1: Home page"
-                    docker exec ${APP_NAME} curl -f http://localhost:8080
+                    docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080
 
                     echo "Test2: Hello endpoint"
-                    docker exec ${APP_NAME} curl -f http://localhost:8080/api/hello
+                    docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080/api/hello
 
                     echo "Test3: Health endpoint"
-                    docker exec ${APP_NAME} curl -f http://localhost:8080/api/health
+                    docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080/api/health
 
                     echo "All Tests passed!"
                 '''
