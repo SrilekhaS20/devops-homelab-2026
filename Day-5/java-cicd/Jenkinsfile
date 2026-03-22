@@ -5,6 +5,14 @@ pipeline {
         maven 'Maven-3.9'
     }
     
+    parameters {
+        choice(
+            name: 'ENVIRONMENT'
+            choices: ['dev', 'staging', 'production']
+            description: 'Select which enviornment to deploy to'
+        )
+    }
+
     environment {
         APP_NAME = 'java-app'
         DOCKERHUB_USERNAME = 'sri24devops'
@@ -12,6 +20,14 @@ pipeline {
     }
     
     stages {
+        stage('Show Build Parameters') {
+            steps {
+                echo "=========================================="
+                echo "Selected Environment: ${params.ENVIRONMENT}"
+                echo "=========================================="
+            }
+        }
+
         stage('Build JAR with Maven') {
             steps {
                 echo "Building JAR file with Maven"
