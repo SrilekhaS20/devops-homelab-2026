@@ -89,7 +89,7 @@ pipeline {
         stage('Deploy container') {
             steps {
                 echo "Deploying to ${params.ENVIRONMENT} from DockerHub"
-                sh '''
+                sh """
                     # Stop old container (if exists)
                     # 2>/dev/null: Suppress error messages
                     # || true: Don't fail if container doesn't exist
@@ -108,14 +108,14 @@ pipeline {
                     docker ps | grep ${APP_NAME}-${params.ENVIRONMENT}
                     echo "Container is running!"
                     echo "${params.ENVIRONMENT} deployment is successful!"
-                '''
+                """
             }
         }
 
         stage('Test Application') {
             steps {
                 echo "Testing Application in ${params.ENVIRONMENT}"
-                sh '''
+                sh """
                     echo "Test1: Home page"
                     docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080
 
@@ -126,7 +126,7 @@ pipeline {
                     docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080/api/health
 
                     echo "All Tests passed!"
-                '''
+                """
             }
         }
     }
