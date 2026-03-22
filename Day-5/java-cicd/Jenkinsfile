@@ -86,6 +86,22 @@ pipeline {
             }
         }
 
+        stage('Cleanup Old Containers') {
+            steps {
+                echo "Cleaning up old containers ..."
+                sh """
+                # Stop and remove old containers (without environment suffix)
+                docker stop ${APP_NAME} 2>/dev/null || true
+                docker rm ${APP_NAME} 2>/dev/null || true
+
+                # Stop and remove old containers (with environment suffix)
+                docker stop ${APP_NAME}-${params.ENVIRONMENT} 2>/dev/null || true
+                docker rm ${APP_NAME}-${params.ENVIRONMENT} 2>/dev/null || true
+                echo "Cleanup complete"
+                """
+            }
+        }
+
         stage('Deploy container') {
             steps {
                 echo "Deploying to ${params.ENVIRONMENT} from DockerHub"
