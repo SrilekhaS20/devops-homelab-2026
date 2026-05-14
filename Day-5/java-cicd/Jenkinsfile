@@ -5,13 +5,29 @@ pipeline {
         maven 'Maven-3.9'
     }
     
+    parameters {
+        choice(
+            name: 'ENVIRONMENT',
+            choices: ['dev', 'staging', 'production'],
+            description: 'Select which enviornment to deploy to'
+        )
+    }
+
     environment {
         APP_NAME = 'java-app'
         DOCKERHUB_USERNAME = 'sri24devops'
-        DOCKERHUB_REPO = '${DOCKERHUB_USERNAME}:${APP_NAME}'
+        DOCKERHUB_REPO = "${DOCKERHUB_USERNAME}/${APP_NAME}"
     }
     
     stages {
+        stage('Show Build Parameters') {
+            steps {
+                echo "=========================================="
+                echo "Selected Environment: ${params.ENVIRONMENT}"
+                echo "=========================================="
+            }
+        }
+
         stage('Build JAR with Maven') {
             steps {
                 echo "Building JAR file with Maven"
@@ -47,7 +63,7 @@ pipeline {
                 echo "Pushing to DockerHub"
                 script {
                     withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub-cred',
+                        credentialsId: 'dockerhub_cred',
                         usernameVariable: 'DOCKER_USER',
                         passwordVariable: 'DOCKER_PASS'
                     )]) {
@@ -65,6 +81,7 @@ pipeline {
                             echo "Image pushed to DockerHub successfully"
                             
                         '''
+<<<<<<< HEAD
  
         stage('Approval to Deploy') {
             steps {
@@ -74,47 +91,70 @@ pipeline {
                 }
             }
         }
+=======
+                    }
+                }
+            }
+        }
+
+        stage('Cleanup Old Containers') {
+            steps {
+                echo "Cleaning up old containers ..."
+                sh """
+                # Stop and remove old containers (without environment suffix)
+                docker stop ${APP_NAME} 2>/dev/null || true
+                docker rm ${APP_NAME} 2>/dev/null || true
+
+                # Stop and remove old containers (with environment suffix)
+                docker stop ${APP_NAME}-${params.ENVIRONMENT} 2>/dev/null || true
+                docker rm ${APP_NAME}-${params.ENVIRONMENT} 2>/dev/null || true
+                echo "Cleanup complete"
+                """
+            }
+        }
+>>>>>>> refs/remotes/origin/main
 
         stage('Deploy container') {
             steps {
-                echo "Deploying from DockerHub"
-                sh '''
+                echo "Deploying to ${params.ENVIRONMENT} from DockerHub"
+                sh """
                     # Stop old container (if exists)
                     # 2>/dev/null: Suppress error messages
                     # || true: Don't fail if container doesn't exist
-                    docker stop ${APP_NAME} 2>/dev/null || true
-                    docker rm ${APP_NAME} 2>/dev/null || true
+                    docker stop ${APP_NAME}-${params.ENVIRONMENT} 2>/dev/null || true
+                    docker rm ${APP_NAME}-${params.ENVIRONMENT} 2>/dev/null || true
 
                     echo "Pulling from DockerHub"
                     docker pull ${DOCKERHUB_REPO}:${BUILD_NUMBER}
 
                     echo "Starting new container"
-                    docker run -d -p 8081:8080 --name ${APP_NAME} --restart unless-stopped ${DOCKERHUB_REPO}:${BUILD_NUMBER}
+                    docker run -d -p 8081:8080 --name ${APP_NAME}-${params.ENVIRONMENT} --restart unless-stopped ${DOCKERHUB_REPO}:${BUILD_NUMBER}
 
                     # Wait for Spring Boot to start
                     sleep 30
                     
-                    docker ps | grep ${APP_NAME}
+                    docker ps | grep ${APP_NAME}-${params.ENVIRONMENT}
                     echo "Container is running!"
-                '''
+                    echo "${params.ENVIRONMENT} deployment is successful!"
+                """
             }
         }
 
         stage('Test Application') {
             steps {
-                echo "Testing Application"
-                sh '''
+                echo "Testing Application in ${params.ENVIRONMENT}"
+                sh """
                     echo "Test1: Home page"
-                    docker exec ${APP_NAME} curl -f http://localhost:8080
+                    docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080
 
                     echo "Test2: Hello endpoint"
-                    docker exec ${APP_NAME} curl -f http://localhost:8080/api/hello
+                    docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080/api/hello
 
                     echo "Test3: Health endpoint"
-                    docker exec ${APP_NAME} curl -f http://localhost:8080/api/health
+                    docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080/api/health
 
                     echo "All Tests passed!"
-                '''
+                """
             }
         }
     }
@@ -122,16 +162,35 @@ pipeline {
     post {
         success {
             echo '========================================'
-            echo 'STAGE1 PIPELINE SUCCESS'
+            echo 'PIPELINE SUCCESS WITH DOCKER HUB!'
             echo '========================================'
+            echo "Docker Hub: https://hub.docker.com/r/${DOCKERHUB_REPO}"
+            echo "Pull Command: docker pull ${DOCKERHUB_REPO}:${BUILD_NUMBER}"
             echo "Application url: http://192.168.1.9:8081"
-            echo "Build: ${BUILD_NUMBER}"
+            echo "Tags: ${BUILD_NUMBER}, latest"
             echo "Image: eclipse-temurin:17-jdk"
+            echo "docker pull ${DOCKERHUB_REPO}:latest"
+            echo "docker run -p 8080:8080 ${DOCKERHUB_REPO}:latest"
             echo "========================================"
         }
 
         failure {
-            sh 'docker logs ${APP_NAME} || true'
+            echo '========================================='
+            echo 'PIPELINE FAILED'
+            echo '========================================='
+            sh '''
+                echo "Gathering failure information..."
+                echo ""
+                echo "=== Container Status ==="
+                docker ps -a | grep ${APP_NAME} || echo "No container found"
+                echo ""
+                echo "=== Container Logs ==="
+                docker logs ${APP_NAME} 2>&1 || echo "No logs available"
+                echo ""
+                echo "=== Docker Images ==="
+                docker images | grep ${APP_NAME} || echo "No images"
+            '''
+            echo '=========================================='
         }
 
         always {

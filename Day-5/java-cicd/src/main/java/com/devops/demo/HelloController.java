@@ -17,7 +17,7 @@ public class HelloController {
     public String hello() {
         String timestamp = LocalDateTime.now()
             .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        return "Hello from Java Spring Boot! Deployed via Jenkins at " + timestamp;
+        return "Hello from Java Spring Boot! Docker Hub integration working! Build" + timestamp;
     }
 
     @GetMapping("/api/health")
