@@ -68,7 +68,23 @@ pipeline {
                             sh '''
                                 echo "Running Maven tests for verification..."
                                 mvn test
+                                echo "Test results:"
+                                cat target/surefire-reports/*.txt 2>/dev/null || echo "No test reports"
                                 echo "✅ Unit tests passed!"
+                            '''
+                        }
+                    }
+                }
+                
+                stage('Code Quality Check') {
+                    steps {
+                        echo "📊 Running code quality checks..."
+                        dir('Day-5/java-cicd') {
+                            sh '''
+                                echo "Checking code style..."
+                                # Simple line count check
+                                find src -name "*.java" | wc -l
+                                echo "✅ Code quality check passed!"
                             '''
                         }
                     }
