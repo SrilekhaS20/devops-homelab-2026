@@ -58,6 +58,31 @@ pipeline {
             }
         }
 
+        stage('Trivy Security Scan') {
+            steps {
+                echo "Running Trivy image security scan"
+                sh '''
+                    # Install Trivy if not present
+                    which trivy || (
+                        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
+                        echo "deb https://aquasecurity.github.io/trivy-repo/deb generic main" | tee /etc/apt/sources.list.d/trivy.list
+                        apt-get update && apt-get install -y trivy
+                    )
+
+                    echo "Scanning image for vulnerabilities..."
+                    trivy image --exit-code 1 \
+                                --severity CRITICAL \
+                                --no-progress \
+                                ${APP_NAME}:${BUILD_NUMBER} || {
+                        echo "CRITICAL vulnerabilities found! Failing pipeline."
+                        exit 1
+                    }
+
+                    echo "No critical vulnerabilities found. Safe to push."
+                '''
+            }
+        }
+
         stage('Push Image to DockerHub') {
             steps {
                 echo "Pushing to DockerHub"
