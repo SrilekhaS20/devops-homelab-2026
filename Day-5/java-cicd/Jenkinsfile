@@ -59,13 +59,28 @@ pipeline {
             }
         }
 
-        stage('Check Tools') {
+        stage('Trivy Security Scan') {
             steps {
+                echo "Running Trivy image security scan"
                 sh '''
-                    which curl || echo "curl not found"
-                    which wget || echo "wget not found"
-                    which docker || echo "docker not found"
-                    which trivy || echo "trivy not found"
+                    # Install Trivy using curl if not present
+                    if ! command -v trivy &> /dev/null; then
+                        echo "Installing Trivy..."
+                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+                        echo "Trivy installed successfully"
+                    fi
+
+                    echo "Trivy version:"
+                    trivy --version
+
+                    echo "Scanning ${APP_NAME}:${BUILD_NUMBER} for CRITICAL vulnerabilities..."
+                    trivy image \
+                        --exit-code 1 \
+                        --severity CRITICAL \
+                        --no-progress \
+                        ${APP_NAME}:${BUILD_NUMBER}
+
+                    echo "Scan complete. No CRITICAL vulnerabilities found!"
                 '''
             }
         }
