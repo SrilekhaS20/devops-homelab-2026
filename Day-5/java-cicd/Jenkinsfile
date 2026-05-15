@@ -81,6 +81,10 @@ pipeline {
                             echo "Image pushed to DockerHub successfully"
                             
                         '''
+                        }
+                 }
+            }
+        }
  
         stage('Approval to Deploy') {
             steps {
