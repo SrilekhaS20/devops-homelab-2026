@@ -24,6 +24,11 @@
         <java.version>17</java.version>
     </properties>
 
+    <properties>
+    <!-- Override vulnerable Tomcat version -->
+    <tomcat.version>10.1.35</tomcat.version>
+    </properties>
+
     <!-- Dependencies (libraries our app needs) -->
     <dependencies>
         <!-- Spring Boot Web - for REST APIs -->
