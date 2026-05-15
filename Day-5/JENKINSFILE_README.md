@@ -396,7 +396,7 @@ docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
 | Environment | URL | Port |
 |-------------|-----|------|
 | Development | http://192.168.1.9:8082 | 8082 |
-| Staging | http://192.168.1.9:803 | 8083 |
+| Staging | http://192.168.1.9:8083 | 8083 |
 | Production | http://192.168.1.9:8081 | 8081 |
 
 ---
