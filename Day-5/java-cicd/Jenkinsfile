@@ -41,20 +41,37 @@ pipeline {
                 }
             }
         }
+        
+        stage('Build and Scan in parallel') {
+            parallel {
+                stage('Build Docker Image') {
+                    steps {
+                        echo "Using Eclipse Temurin (OpenJDK replacement)"
+                        dir('Day-5/java-cicd') {
+                            sh '''
+                                docker build -t ${APP_NAME}:${BUILD_NUMBER} .
+                                docker tag ${APP_NAME}:${BUILD_NUMBER} ${DOCKERHUB_REPO}:${BUILD_NUMBER}
+                                docker tag ${APP_NAME}:${BUILD_NUMBER} ${DOCKERHUB_REPO}:latest
+                                docker images | grep ${APP_NAME}
 
-        stage('Build Docker Image') {
-            steps {
-                echo "Using Eclipse Temurin (OpenJDK replacement)"
-                dir('Day-5/java-cicd') {
-                    sh '''
-                        docker build -t ${APP_NAME}:${BUILD_NUMBER} .
-                        docker tag ${APP_NAME}:${BUILD_NUMBER} ${DOCKERHUB_REPO}:${BUILD_NUMBER}
-                        docker tag ${APP_NAME}:${BUILD_NUMBER} ${DOCKERHUB_REPO}:latest
-                        docker images | grep ${APP_NAME}
+                                echo "Image size:"
+                                docker images ${APP_NAME}:${BUILD_NUMBER} --format "{{.Size}}"
+                            '''
+                        }
+                    }
+                }
 
-                        echo "Image size:"
-                        docker images ${APP_NAME}:${BUILD_NUMBER} --format "{{.Size}}"
-                    '''
+                stage('Run Unit Tests') {
+                    steps {
+                        echo "🧪 Running unit tests..."
+                        dir('Day-5/java-cicd') {
+                            sh '''
+                                echo "Running Maven tests for verification..."
+                                mvn test
+                                echo "✅ Unit tests passed!"
+                            '''
+                        }
+                    }
                 }
             }
         }
