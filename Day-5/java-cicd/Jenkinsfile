@@ -17,6 +17,7 @@ pipeline {
         APP_NAME = 'java-app'
         DOCKERHUB_USERNAME = 'sri24devops'
         DOCKERHUB_REPO = "${DOCKERHUB_USERNAME}/${APP_NAME}"
+        APP_PORT = "${params.ENVIRONMENT == 'production' ? '8081' : params.ENVIRONMENT == 'staging' ? '8082' : '8082'}"
     }
     
     stages {
@@ -126,13 +127,13 @@ pipeline {
                     docker pull ${DOCKERHUB_REPO}:${BUILD_NUMBER}
 
                     echo "Starting new container"
-                    docker run -d -p 8081:8080 --name ${APP_NAME}-${params.ENVIRONMENT} --restart unless-stopped ${DOCKERHUB_REPO}:${BUILD_NUMBER}
+                    docker run -d -p ${APP_PORT}:8080 --name ${APP_NAME}-${params.ENVIRONMENT} --restart unless-stopped ${DOCKERHUB_REPO}:${BUILD_NUMBER}
 
                     # Wait for Spring Boot to start
                     sleep 30
                     
                     docker ps | grep ${APP_NAME}-${params.ENVIRONMENT}
-                    echo "Container is running!"
+                    echo "Container is running on port ${APP_PORT}!"
                     echo "${params.ENVIRONMENT} deployment is successful!"
                 """
             }
