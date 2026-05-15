@@ -81,7 +81,6 @@ pipeline {
                             echo "Image pushed to DockerHub successfully"
                             
                         '''
-<<<<<<< HEAD
  
         stage('Approval to Deploy') {
             steps {
@@ -91,11 +90,7 @@ pipeline {
                 }
             }
         }
-=======
-                    }
-                }
-            }
-        }
+                
 
         stage('Cleanup Old Containers') {
             steps {
@@ -112,7 +107,6 @@ pipeline {
                 """
             }
         }
->>>>>>> refs/remotes/origin/main
 
         stage('Deploy container') {
             steps {
