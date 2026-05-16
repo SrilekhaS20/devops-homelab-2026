@@ -248,6 +248,19 @@ pipeline {
                 echo ""
                 echo "=== Docker Images ==="
                 docker images | grep ${APP_NAME} || echo "No images"
+
+                # Stop failed container
+                docker stop ${APP_NAME}-${ENVIRONMENT} || true
+                docker rm ${APP_NAME}-${ENVIRONMENT} || true
+
+                # Redeploy previous build
+                PREVIOUS_BUILD=$((${BUILD_NUMBER} - 1))
+                docker pull ${REPO}:${PREVIOUS_BUILD}
+                docker run -d -p ${PORT}:8080 \
+                    --name ${APP_NAME}-${ENVIRONMENT} \
+                    ${REPO}:${PREVIOUS_BUILD}
+
+                echo "Rolled back to build ${PREVIOUS_BUILD}"
             '''
             echo '=========================================='
         }
