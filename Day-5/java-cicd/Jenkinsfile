@@ -237,31 +237,47 @@ pipeline {
             echo '========================================='
             echo 'PIPELINE FAILED'
             echo '========================================='
-            sh """
-                echo "Gathering failure information..."
-                echo ""
-                echo "=== Container Status ==="
-                docker ps -a | grep ${APP_NAME} || echo "No container found"
-                echo ""
-                echo "=== Container Logs ==="
-                docker logs ${APP_NAME} 2>&1 || echo "No logs available"
-                echo ""
-                echo "=== Docker Images ==="
-                docker images | grep ${APP_NAME} || echo "No images"
+            script {
+                def previousBuild = env.BUILD_NUMBER.toInteger() - 1
+                
+                if (previousBuild < 1) {
+                    echo "Build #1 failed. No previous version to rollback to."
+                } else {
+                    sh """
+                        echo "Gathering failure information..."
+                        echo ""
+                        echo "=== Container Status ==="
+                        docker ps -a | grep ${APP_NAME} || echo "No container found"
+                        echo ""
+                        echo "=== Container Logs ==="
+                        docker logs ${APP_NAME}-${params.ENVIRONMENT} 2>&1 \
+                        || echo "No logs available"
+                        echo ""
+                        echo "=== Docker Images ==="
+                        docker images | grep ${APP_NAME} || echo "No images"
+                        echo ""
+                        echo "=== Starting Rollback to Build ${previousBuild} ==="
 
-                # Stop failed container
-                docker stop ${APP_NAME}-${params.ENVIRONMENT} || true
-                docker rm ${APP_NAME}-${params.ENVIRONMENT} || true
+                        docker stop ${APP_NAME}-${params.ENVIRONMENT} \
+                        2>/dev/null || true
+                        docker rm ${APP_NAME}-${params.ENVIRONMENT} \
+                        2>/dev/null || true
 
-                # Redeploy previous build
-                PREVIOUS_BUILD=$((${BUILD_NUMBER} - 1))
-                docker pull ${DOCKERHUB_REPO}:${PREVIOUS_BUILD}
-                docker run -d -p ${APP_PORT}:8080 \
-                    --name ${APP_NAME}-${params.ENVIRONMENT} \
-                    ${DOCKERHUB_REPO}:${PREVIOUS_BUILD}
+                        if docker pull ${DOCKERHUB_REPO}:${previousBuild}; then
+                            docker run -d \\
+                                -p ${APP_PORT}:8080 \\
+                                --name ${APP_NAME}-${params.ENVIRONMENT} \\
+                                --restart unless-stopped \\
+                                ${DOCKERHUB_REPO}:${previousBuild}
 
-                echo "Rolled back to build ${PREVIOUS_BUILD}"
-            """
+                            echo "✅ Rollback successful to build ${previousBuild}"
+                        else
+                            echo "❌ Image ${DOCKERHUB_REPO}:${previousBuild} not found"
+                            echo "Manual intervention required"
+                        fi
+                    """
+                }
+            }
             echo '=========================================='
         }
 
