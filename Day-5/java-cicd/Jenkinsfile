@@ -214,7 +214,7 @@ pipeline {
 
                     echo "All Tests passed!"
                 """
-            //}
+            }
         }
     }
 
