@@ -210,7 +210,7 @@ pipeline {
                     docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080/api/hello
 
                     echo "Test3: Health endpoint"
-                    docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080/api/health
+                    docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080/wrong-endpoint
 
                     echo "All Tests passed!"
                 """
