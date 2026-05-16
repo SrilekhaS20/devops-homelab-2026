@@ -237,7 +237,7 @@ pipeline {
             echo '========================================='
             echo 'PIPELINE FAILED'
             echo '========================================='
-            sh '''
+            sh """
                 echo "Gathering failure information..."
                 echo ""
                 echo "=== Container Status ==="
@@ -261,7 +261,7 @@ pipeline {
                     ${DOCKERHUB_REPO}:${PREVIOUS_BUILD}
 
                 echo "Rolled back to build ${PREVIOUS_BUILD}"
-            '''
+            """
             echo '=========================================='
         }
 
