@@ -17,7 +17,7 @@ pipeline {
         APP_NAME = 'java-app'
         DOCKERHUB_USERNAME = 'sri24devops'
         DOCKERHUB_REPO = "${DOCKERHUB_USERNAME}/${APP_NAME}"
-        APP_PORT = "${params.ENVIRONMENT == 'production' ? '8081' : params.ENVIRONMENT == 'staging' ? '8082' : '8082'}"
+        APP_PORT = "${params.ENVIRONMENT == 'production' ? '8081' : params.ENVIRONMENT == 'staging' ? '8083' : '8082'}"
     }
     
     stages {
