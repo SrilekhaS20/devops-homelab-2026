@@ -19,9 +19,11 @@
     <name>Java CI/CD Demo</name>
     <description>Spring Boot application for Jenkins CI/CD pipeline</description>
 
-    <!-- Java Version -->
     <properties>
+        <!-- Java Version -->
         <java.version>17</java.version>
+        <!-- Override vulnerable Tomcat version -->
+        <tomcat.version>10.1.55</tomcat.version>
     </properties>
 
     <!-- Dependencies (libraries our app needs) -->
