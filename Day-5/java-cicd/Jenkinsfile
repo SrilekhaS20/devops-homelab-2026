@@ -114,7 +114,7 @@ pipeline {
                     trivy --version
 
                     echo "Scanning ${APP_NAME}:${BUILD_NUMBER} for CRITICAL vulnerabilities..."
-                    trivy image \
+                    timeout 600 trivy image \
                         --exit-code 1 \
                         --severity CRITICAL \
                         --no-progress \
