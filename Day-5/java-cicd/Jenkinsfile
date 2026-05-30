@@ -18,13 +18,18 @@ pipeline {
         DOCKERHUB_USERNAME = 'sri24devops'
         DOCKERHUB_REPO = "${DOCKERHUB_USERNAME}/${APP_NAME}"
         APP_PORT = "${params.ENVIRONMENT == 'production' ? '8081' : params.ENVIRONMENT == 'staging' ? '8083' : '8082'}"
+        VM_IP = "192.168.1.10"
     }
     
     stages {
         stage('Show Build Parameters') {
             steps {
                 echo "=========================================="
+                echo "  Build Information  "
                 echo "Selected Environment: ${params.ENVIRONMENT}"
+                echo "Port: ${APP_PORT}"
+                echo "Build Number: ${BUILD_NUMBER}"
+                echo "Build Duration: ${currentBuild.durationString}"
                 echo "=========================================="
             }
         }
@@ -37,6 +42,7 @@ pipeline {
                       mvn --version
                       mvn clean package
                       ls -lh target/
+                      echo "JAR built successfully"
                     '''
                 }
             }
@@ -199,38 +205,73 @@ pipeline {
             }
         }
 
-        stage('Test Application') {
-            steps {
-                echo "Testing Application in ${params.ENVIRONMENT}"
-                sh """
-                    echo "Test1: Home page"
-                    docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080
-
-                    echo "Test2: Hello endpoint"
-                    docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080/api/hello
-
-                    echo "Test3: Health endpoint"
-                    docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080/api/health
-
-                    echo "All Tests passed!"
-                """
+        stage('Parallel Post-Deployment Tests') {
+            parallel {
+                stage('Health Checks') {
+                    steps {
+                        echo "🏥 Running health checks..."
+                        sh """
+                            echo "Checking application health..."
+                            docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080/api/health
+                            echo "✅ Health check passed!"
+                        """
+                    }
+                }
+                
+                stage('API Endpoint Tests') {
+                    steps {
+                        echo "🔌 Testing API endpoints..."
+                        sh """
+                            echo "Test 1: Homepage"
+                            docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080
+                            
+                            echo ""
+                            echo "Test 2: Hello endpoint"
+                            docker exec ${APP_NAME}-${params.ENVIRONMENT} curl -f http://localhost:8080/api/hello
+                            
+                            echo "✅ API tests passed!"
+                        """
+                    }
+                }
+                
+                stage('Container Health') {
+                    steps {
+                        echo "📊 Checking container health..."
+                        sh """
+                            echo "Container status:"
+                            docker ps | grep ${APP_NAME}-${params.ENVIRONMENT}
+                            
+                            echo ""
+                            echo "Container stats (5 second sample):"
+                            docker stats --no-stream ${APP_NAME}-${params.ENVIRONMENT} | tail -1
+                            
+                            echo "✅ Container healthy!"
+                        """
+                    }
+                }
             }
         }
     }
 
     post {
         success {
-            echo '========================================'
-            echo 'PIPELINE SUCCESS WITH DOCKER HUB!'
-            echo '========================================'
+            echo '🎉 =========================================='
+            echo "🎉  ${params.ENVIRONMENT.toUpperCase()} DEPLOYMENT SUCCESS!"
+            echo '🎉 =========================================='
+            echo "Build Number: ${BUILD_NUMBER}"
+            echo "Environment: ${params.ENVIRONMENT}"
+            echo "Container: ${APP_NAME}-${params.ENVIRONMENT}"
+            echo "Port: ${APP_PORT}"
+            echo "Application URL: http://${VM_IP}:${APP_PORT}"
             echo "Docker Hub: https://hub.docker.com/r/${DOCKERHUB_REPO}"
-            echo "Pull Command: docker pull ${DOCKERHUB_REPO}:${BUILD_NUMBER}"
-            echo "Application url: http://192.168.1.9:${APP_PORT}"
-            echo "Tags: ${BUILD_NUMBER}, latest"
-            echo "Image: eclipse-temurin:17-jdk"
-            echo "docker pull ${DOCKERHUB_REPO}:latest"
-            echo "docker run -p 8080:8080 ${DOCKERHUB_REPO}:latest"
-            echo "========================================"
+            echo "Image: ${DOCKERHUB_REPO}:${BUILD_NUMBER}"
+            echo "Security: Trivy scan passed ✅"
+            echo "Tests: All parallel tests passed ✅"
+            echo "Build Duration: ${currentBuild.durationString}"
+            echo ""
+            echo "Quick Test:"
+            echo "  curl http://${VM_IP}:${APP_PORT}/api/health"
+            echo '🎉 =========================================='
         }
 
         failure {
