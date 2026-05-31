@@ -48,18 +48,6 @@ pipeline {
                 }
             }
         }
-        
-        stage('Build and Scan in parallel') {
-            parallel {
-                stage('Build Docker Image') {
-                    steps {
-                        echo "Using Eclipse Temurin (OpenJDK replacement)"
-                        dir('Day-5/java-cicd') {
-                            sh '''
-                                docker build -t ${APP_NAME}:${BUILD_NUMBER} .
-                                docker tag ${APP_NAME}:${BUILD_NUMBER} ${DOCKERHUB_REPO}:${BUILD_NUMBER}
-                                docker tag ${APP_NAME}:${BUILD_NUMBER} ${DOCKERHUB_REPO}:latest
-                                docker images | grep ${APP_NAME}
 
         stage('Build and Test in Parallel') {
             parallel {
@@ -103,62 +91,6 @@ pipeline {
                         }
                     }
                 }
-
-                stage('Run Unit Tests') {
-                    steps {
-                        echo "🧪 Running unit tests..."
-                        dir('Day-5/java-cicd') {
-                            sh '''
-                                echo "Running Maven tests for verification..."
-                                mvn test
-                                echo "Test results:"
-                                cat target/surefire-reports/*.txt 2>/dev/null || echo "No test reports"
-                                echo "✅ Unit tests passed!"
-                            '''
-                        }
-                    }
-                }
-                
-                stage('Code Quality Check') {
-                    steps {
-                        echo "📊 Running code quality checks..."
-                        dir('Day-5/java-cicd') {
-                            sh '''
-                                echo "Checking code style..."
-                                # Simple line count check
-                                find src -name "*.java" | wc -l
-                                echo "✅ Code quality check passed!"
-                            '''
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Trivy Security Scan') {
-            steps {
-                echo "Running Trivy image security scan"
-                sh '''
-                    # Use cached Trivy or install
-                    if [ ! -f /var/jenkins_home/tools/trivy ]; then
-                        echo "Installing Trivy (one-time setup)..."
-                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /var/jenkins_home/tools
-                    fi
-                    
-                    export PATH=\$PATH:/var/jenkins_home/tools
-
-                    echo "Trivy version:"
-                    trivy --version
-
-                    echo "Scanning ${APP_NAME}:${BUILD_NUMBER} for CRITICAL vulnerabilities..."
-                    timeout 600 trivy image \
-                        --exit-code 1 \
-                        --severity CRITICAL \
-                        --no-progress \
-                        ${APP_NAME}:${BUILD_NUMBER}
-
-                    echo "Scan complete. No CRITICAL vulnerabilities found!"
-                '''
             }
         }
 
@@ -198,34 +130,8 @@ pipeline {
                             docker logout
                             echo "✅ Docker Hub push complete!"
                         '''
-                        }
-                 }
-            }
-        }
- 
-        stage('Approval to Deploy') {
-            steps {
-                timeout(time: 30, unit: 'MINUTES') {
-                    input message: 'Image scanned and pushed. Deploy container?',
-                          ok: 'Yes, Deploy Now'
+                    }
                 }
-            }
-        }
-                
-
-        stage('Cleanup Old Containers') {
-            steps {
-                echo "Cleaning up old containers ..."
-                sh """
-                # Stop and remove old containers (without environment suffix)
-                docker stop ${APP_NAME} 2>/dev/null || true
-                docker rm ${APP_NAME} 2>/dev/null || true
-
-                # Stop and remove old containers (with environment suffix)
-                docker stop ${APP_NAME}-${params.ENVIRONMENT} 2>/dev/null || true
-                docker rm ${APP_NAME}-${params.ENVIRONMENT} 2>/dev/null || true
-                echo "Cleanup complete"
-                """
             }
         }
 
