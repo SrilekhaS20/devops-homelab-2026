@@ -1,26 +1,26 @@
 pipeline {
     agent any
-    
+
     tools {
         maven 'Maven-3.9'
     }
 
     // ✨ NO PARAMETERS! Environment from branch name
-    
+
     environment {
         APP_NAME = 'java-app'
         DOCKERHUB_USERNAME = 'sri24devops'
         DOCKERHUB_REPO = "${DOCKERHUB_USERNAME}/${APP_NAME}"
-        
+
         // ✨ CRITICAL: Determine environment from branch name
         ENVIRONMENT = "${env.BRANCH_NAME == 'main' ? 'production' : env.BRANCH_NAME == 'staging' ? 'staging' : 'dev'}"
-        
+
         // ✨ Port mapping based on environment
         APP_PORT = "${ENVIRONMENT == 'production' ? '8081' : ENVIRONMENT == 'staging' ? '8083' : '8082'}"
-        
+
         VM_IP = "192.168.1.10"
     }
-    
+
     stages {
         stage('Show Build Information') {
             steps {
@@ -59,7 +59,7 @@ pipeline {
                                 docker build -t ${APP_NAME}:${BUILD_NUMBER} .
                                 docker tag ${APP_NAME}:${BUILD_NUMBER} ${DOCKERHUB_REPO}:${BUILD_NUMBER}
                                 docker tag ${APP_NAME}:${BUILD_NUMBER} ${DOCKERHUB_REPO}:latest
-                                
+
                                 echo "✅ Docker image built!"
                             '''
                         }
@@ -102,7 +102,7 @@ pipeline {
                         echo "Installing Trivy..."
                         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /var/jenkins_home/tools
                     fi
-                    
+
                     export PATH=$PATH:/var/jenkins_home/tools
                     timeout 600 trivy image \
                         --exit-code 1 \
@@ -242,7 +242,7 @@ pipeline {
                         echo "Attempting rollback to build #${previousBuild}..."
                         docker stop ${APP_NAME}-${ENVIRONMENT} 2>/dev/null || true
                         docker rm ${APP_NAME}-${ENVIRONMENT} 2>/dev/null || true
-                        
+
                         if docker pull ${DOCKERHUB_REPO}:${previousBuild}; then
                             docker run -d \\
                                 -p ${APP_PORT}:8080 \\
