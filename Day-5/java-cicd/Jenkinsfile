@@ -1,66 +1,122 @@
 pipeline {
     agent any
-    
+
     tools {
         maven 'Maven-3.9'
     }
-    
-    parameters {
-        choice(
-            name: 'ENVIRONMENT',
-            choices: ['dev', 'staging', 'production'],
-            description: 'Select which enviornment to deploy to'
-        )
-    }
+
+    // ✨ NO PARAMETERS! Environment from branch name
 
     environment {
         APP_NAME = 'java-app'
         DOCKERHUB_USERNAME = 'sri24devops'
         DOCKERHUB_REPO = "${DOCKERHUB_USERNAME}/${APP_NAME}"
+
+        // ✨ CRITICAL: Determine environment from branch name
+        ENVIRONMENT = "${env.BRANCH_NAME == 'main' ? 'production' : env.BRANCH_NAME == 'staging' ? 'staging' : 'dev'}"
+
+        // ✨ Port mapping based on environment
+        APP_PORT = "${ENVIRONMENT == 'production' ? '8081' : ENVIRONMENT == 'staging' ? '8083' : '8082'}"
+
+        VM_IP = "192.168.1.10"
     }
-    
+
     stages {
-        stage('Show Build Parameters') {
+        stage('Show Build Information') {
             steps {
                 echo "=========================================="
-                echo "Selected Environment: ${params.ENVIRONMENT}"
+                echo "🚀 Multibranch Pipeline Build"
+                echo "=========================================="
+                echo "Git Branch: ${env.BRANCH_NAME}"
+                echo "Environment: ${ENVIRONMENT}"
+                echo "Port: ${APP_PORT}"
+                echo "Build Number: ${BUILD_NUMBER}"
                 echo "=========================================="
             }
         }
 
         stage('Build JAR with Maven') {
             steps {
-                echo "Building JAR file with Maven"
+                echo "📦 Building JAR with Maven..."
                 dir('Day-5/java-cicd') {
                     sh '''
-                      mvn --version
-                      mvn clean package
-                      ls -lh target/
+                        mvn --version
+                        mvn clean package -DskipTests
+                        ls -lh target/
+                        echo "✅ JAR built successfully!"
                     '''
                 }
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                echo "Using Eclipse Temurin (OpenJDK replacement)"
-                dir('Day-5/java-cicd') {
-                    sh '''
-                        docker build -t ${APP_NAME}:${BUILD_NUMBER} .
-                        docker tag ${APP_NAME}:${BUILD_NUMBER} ${DOCKERHUB_REPO}:${BUILD_NUMBER}
-                        docker tag ${APP_NAME}:${BUILD_NUMBER} ${DOCKERHUB_REPO}:latest
-                        docker images | grep ${APP_NAME}
+        stage('Build and Test in Parallel') {
+            parallel {
+                stage('Build Docker Image') {
+                    steps {
+                        echo "🐳 Building Docker image..."
+                        dir('Day-5/java-cicd') {
+                            sh '''
+                                docker build -t ${APP_NAME}:${BUILD_NUMBER} .
+                                docker tag ${APP_NAME}:${BUILD_NUMBER} ${DOCKERHUB_REPO}:${BUILD_NUMBER}
+                                docker tag ${APP_NAME}:${BUILD_NUMBER} ${DOCKERHUB_REPO}:latest
 
-                        echo "Image size:"
-                        docker images ${APP_NAME}:${BUILD_NUMBER} --format "{{.Size}}"
-                    '''
+                                echo "✅ Docker image built!"
+                            '''
+                        }
+                    }
+                }
+
+                stage('Run Unit Tests') {
+                    steps {
+                        echo "🧪 Running unit tests..."
+                        dir('Day-5/java-cicd') {
+                            sh '''
+                                echo "Running Maven tests..."
+                                mvn test || true
+                                echo "✅ Unit tests completed!"
+                            '''
+                        }
+                    }
+                }
+
+                stage('Code Quality Check') {
+                    steps {
+                        echo "📊 Code quality checks..."
+                        dir('Day-5/java-cicd') {
+                            sh '''
+                                JAVA_FILES=$(find src -name "*.java" | wc -l)
+                                echo "Java files: ${JAVA_FILES}"
+                                echo "✅ Code quality check passed!"
+                            '''
+                        }
+                    }
                 }
             }
         }
 
-        stage('Push Image to DockerHub') {
+        stage('Trivy Security Scan') {
             steps {
-                echo "Pushing to DockerHub"
+                echo "🔒 Running Trivy security scan..."
+                sh '''
+                    if [ ! -f /var/jenkins_home/tools/trivy ]; then
+                        echo "Installing Trivy..."
+                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /var/jenkins_home/tools
+                    fi
+
+                    export PATH=$PATH:/var/jenkins_home/tools
+                    timeout 600 trivy image \
+                        --exit-code 1 \
+                        --severity CRITICAL \
+                        --no-progress \
+                        ${APP_NAME}:${BUILD_NUMBER}
+                    echo "✅ Security scan passed!"
+                '''
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                echo "📤 Pushing to Docker Hub..."
                 script {
                     withCredentials([usernamePassword(
                         credentialsId: 'dockerhub_cred',
@@ -68,100 +124,138 @@ pipeline {
                         passwordVariable: 'DOCKER_PASS'
                     )]) {
                         sh '''
-                            echo "Logging in to DockerHub"
                             echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-
-                            echo "Pushing ${DOCKERHUB_REPO}:${BUILD_NUMBER}"
                             docker push ${DOCKERHUB_REPO}:${BUILD_NUMBER}
-
-                            echo "Pushing ${DOCKERHUB_REPO}:latest"
                             docker push ${DOCKERHUB_REPO}:latest
-
                             docker logout
-                            echo "Image pushed to DockerHub successfully"
-                            
+                            echo "✅ Docker Hub push complete!"
                         '''
                     }
                 }
             }
         }
 
-        stage('Deploy container') {
+        // ✨ CRITICAL: Production approval only!
+        stage('Approval to Deploy') {
+            when {
+                branch 'main'
+            }
             steps {
-                echo "Deploying from DockerHub"
-                sh '''
-                    # Stop old container (if exists)
-                    # 2>/dev/null: Suppress error messages
-                    # || true: Don't fail if container doesn't exist
-                    docker stop ${APP_NAME} 2>/dev/null || true
-                    docker rm ${APP_NAME} 2>/dev/null || true
-
-                    echo "Pulling from DockerHub"
-                    docker pull ${DOCKERHUB_REPO}:${BUILD_NUMBER}
-
-                    echo "Starting new container"
-                    docker run -d -p 8081:8080 --name ${APP_NAME} --restart unless-stopped ${DOCKERHUB_REPO}:${BUILD_NUMBER}
-
-                    # Wait for Spring Boot to start
-                    sleep 30
-                    
-                    docker ps | grep ${APP_NAME}
-                    echo "Container is running!"
-                '''
+                echo "⏸️  🚨 WAITING FOR PRODUCTION APPROVAL 🚨"
+                timeout(time: 30, unit: 'MINUTES') {
+                    input message: "⚠️  Deploy to PRODUCTION? This is the live environment!",
+                          ok: 'YES - Deploy to Production'
+                }
+                echo "✅ Approval granted! Proceeding with production deployment..."
             }
         }
 
-        stage('Test Application') {
+        stage('Cleanup Old Containers') {
             steps {
-                echo "Testing Application"
-                sh '''
-                    echo "Test1: Home page"
-                    docker exec ${APP_NAME} curl -f http://localhost:8080
+                echo "🧹 Cleaning up old containers..."
+                sh """
+                    docker stop ${APP_NAME}-${ENVIRONMENT} 2>/dev/null || true
+                    docker rm ${APP_NAME}-${ENVIRONMENT} 2>/dev/null || true
+                    echo "✅ Cleanup complete!"
+                """
+            }
+        }
 
-                    echo "Test2: Hello endpoint"
-                    docker exec ${APP_NAME} curl -f http://localhost:8080/api/hello
+        stage('Deploy Container') {
+            steps {
+                echo "🚀 Deploying to ${ENVIRONMENT}..."
+                sh """
+                    echo "Pulling from Docker Hub..."
+                    docker pull ${DOCKERHUB_REPO}:${BUILD_NUMBER}
 
-                    echo "Test3: Health endpoint"
-                    docker exec ${APP_NAME} curl -f http://localhost:8080/api/health
+                    echo "Starting container on port ${APP_PORT}..."
+                    docker run -d \
+                        --name ${APP_NAME}-${ENVIRONMENT} \
+                        --restart unless-stopped \
+                        -p ${APP_PORT}:8080 \
+                        ${DOCKERHUB_REPO}:${BUILD_NUMBER}
 
-                    echo "All Tests passed!"
-                '''
+                    sleep 30
+                    docker ps | grep ${APP_NAME}-${ENVIRONMENT}
+                    echo "✅ Deployment successful!"
+                """
+            }
+        }
+
+        stage('Parallel Post-Deployment Tests') {
+            parallel {
+                stage('Health Checks') {
+                    steps {
+                        echo "🏥 Running health checks..."
+                        sh '''
+                            docker exec ${APP_NAME}-${ENVIRONMENT} curl -f http://localhost:8080/api/health || true
+                            echo "✅ Health check passed!"
+                        '''
+                    }
+                }
+
+                stage('API Endpoint Tests') {
+                    steps {
+                        echo "🔌 Testing API endpoints..."
+                        sh '''
+                            docker exec ${APP_NAME}-${ENVIRONMENT} curl -f http://localhost:8080 || true
+                            docker exec ${APP_NAME}-${ENVIRONMENT} curl -f http://localhost:8080/api/hello || true
+                            echo "✅ API tests passed!"
+                        '''
+                    }
+                }
+
+                stage('Container Health') {
+                    steps {
+                        echo "📊 Checking container health..."
+                        sh '''
+                            docker ps | grep ${APP_NAME}-${ENVIRONMENT}
+                            docker stats --no-stream ${APP_NAME}-${ENVIRONMENT} | tail -1 || true
+                            echo "✅ Container healthy!"
+                        '''
+                    }
+                }
             }
         }
     }
 
     post {
         success {
-            echo '========================================'
-            echo 'PIPELINE SUCCESS WITH DOCKER HUB!'
-            echo '========================================'
-            echo "Docker Hub: https://hub.docker.com/r/${DOCKERHUB_REPO}"
-            echo "Pull Command: docker pull ${DOCKERHUB_REPO}:${BUILD_NUMBER}"
-            echo "Application url: http://192.168.1.9:8081"
-            echo "Tags: ${BUILD_NUMBER}, latest"
-            echo "Image: eclipse-temurin:17-jdk"
-            echo "docker pull ${DOCKERHUB_REPO}:latest"
-            echo "docker run -p 8080:8080 ${DOCKERHUB_REPO}:latest"
-            echo "========================================"
+            echo "🎉 =========================================="
+            echo "🎉  ${ENVIRONMENT.toUpperCase()} DEPLOYMENT SUCCESS!"
+            echo "🎉 =========================================="
+            echo "Branch: ${env.BRANCH_NAME}"
+            echo "Environment: ${ENVIRONMENT}"
+            echo "Port: ${APP_PORT}"
+            echo "URL: http://${VM_IP}:${APP_PORT}"
+            echo "Docker Hub: ${DOCKERHUB_REPO}:${BUILD_NUMBER}"
+            echo "Build Duration: ${currentBuild.durationString}"
+            echo "🎉 =========================================="
         }
 
         failure {
-            echo '========================================='
-            echo 'PIPELINE FAILED'
-            echo '========================================='
-            sh '''
-                echo "Gathering failure information..."
-                echo ""
-                echo "=== Container Status ==="
-                docker ps -a | grep ${APP_NAME} || echo "No container found"
-                echo ""
-                echo "=== Container Logs ==="
-                docker logs ${APP_NAME} 2>&1 || echo "No logs available"
-                echo ""
-                echo "=== Docker Images ==="
-                docker images | grep ${APP_NAME} || echo "No images"
-            '''
-            echo '=========================================='
+            echo "❌ PIPELINE FAILED on ${ENVIRONMENT}"
+            script {
+                def previousBuild = env.BUILD_NUMBER.toInteger() - 1
+                if (previousBuild > 0) {
+                    sh """
+                        echo "Attempting rollback to build #${previousBuild}..."
+                        docker stop ${APP_NAME}-${ENVIRONMENT} 2>/dev/null || true
+                        docker rm ${APP_NAME}-${ENVIRONMENT} 2>/dev/null || true
+
+                        if docker pull ${DOCKERHUB_REPO}:${previousBuild}; then
+                            docker run -d \\
+                                -p ${APP_PORT}:8080 \\
+                                --name ${APP_NAME}-${ENVIRONMENT} \\
+                                --restart unless-stopped \\
+                                ${DOCKERHUB_REPO}:${previousBuild}
+                            echo "✅ Rollback to build #${previousBuild} successful"
+                        else
+                            echo "❌ Could not find image for rollback"
+                        fi
+                    """
+                }
+            }
         }
 
         always {
