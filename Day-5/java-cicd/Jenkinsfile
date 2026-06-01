@@ -69,7 +69,6 @@ pipeline {
                             sh '''
                                 docker build -t ${APP_NAME}:${BUILD_NUMBER} .
                                 docker tag ${APP_NAME}:${BUILD_NUMBER} ${DOCKERHUB_REPO}:${BUILD_NUMBER}
-                                docker tag ${APP_NAME}:${BUILD_NUMBER} ${DOCKERHUB_REPO}:latest
 
                                 echo "✅ Docker image built!"
                             '''
@@ -137,7 +136,6 @@ pipeline {
                         sh '''
                             echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                             docker push ${DOCKERHUB_REPO}:${BUILD_NUMBER}
-                            docker push ${DOCKERHUB_REPO}:latest
                             docker logout
                             echo "✅ Docker Hub push complete!"
                         '''
@@ -188,7 +186,7 @@ pipeline {
 
                     sleep 30
                     docker ps | grep ${APP_NAME}-${ENVIRONMENT}
-                    echo "✅ Deployment successful!"
+                    echo "✅ Deployment successful! Image: ${DOCKERHUB_REPO}:${BUILD_NUMBER}"
                 """
             }
         }
