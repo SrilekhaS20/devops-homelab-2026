@@ -49,6 +49,17 @@ pipeline {
             }
         }
 
+        stage('Pre-Build Cleanup') {
+            steps {
+                echo "🧹 Cleaning up old containers before build..."
+                sh """
+                    docker stop ${APP_NAME}-${ENVIRONMENT} 2>/dev/null || true
+                    docker rm ${APP_NAME}-${ENVIRONMENT} 2>/dev/null || true
+                    echo "✅ Pre-build cleanup complete!"
+                """
+            }
+        }
+
         stage('Build and Test in Parallel') {
             parallel {
                 stage('Build Docker Image') {
