@@ -244,6 +244,7 @@ pipeline {
             slackSend(
                 channel: '#devops-homelab-alerts',
                 color: 'good',
+                tokenCredentialId: 'slack-webhook',
                 message: """
                     ✅ ${ENVIRONMENT.toUpperCase()} Build Successful
                     
@@ -264,6 +265,7 @@ pipeline {
             slackSend(
                 channel: '#devops-homelab-alerts',
                 color: 'danger',
+                tokenCredentialId: 'slack-webhook',
                 message: """
                     ❌ ${ENVIRONMENT.toUpperCase()} Build Failed
                     
